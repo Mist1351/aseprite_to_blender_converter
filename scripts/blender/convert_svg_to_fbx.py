@@ -55,6 +55,7 @@ if selected_objects:
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width * extrude_float)})
     bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 
     obj = bpy.context.view_layer.objects.active
     obj.scale.x *= scale_float

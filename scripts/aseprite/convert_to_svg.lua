@@ -1,5 +1,5 @@
 if not app.params['file'] then
-    print("Param 'file' is required")
+    print('Param "file" is required')
     return 1
 end
 
@@ -11,12 +11,12 @@ end
 
 local sprite = app.sprite
 if not sprite then
-    print("Sprite not found:", sprite.filename)
+    print('Sprite not found:', sprite.filename)
     return 1
 end
 
 if not app.params['output'] then
-    print("Output directory is required")
+    print('Output directory is required')
     return 1
 end
 
@@ -36,11 +36,11 @@ for y = 0, numTilesY - 1 do
         local startY = y * tileHeight
         sprite:crop(startX, startY, tileWidth, tileHeight)
 
-        local svgFileName = string.format("tile_%d_%d.svg", x, y)
+        local svgFileName = string.format('tile_%d_%d.svg', x, y)
         local svgFilePath = app.fs.joinPath(output, svgFileName)
 
         sprite:saveAs(svgFilePath)
-        print("File exported to SVG: " .. svgFilePath)
+        print('File exported to SVG: ' .. svgFilePath)
         app.command.Undo()
     end
 end

@@ -13,7 +13,8 @@ else:
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', help='svg file', required=True)
 parser.add_argument('-o', '--output', help='output directory', required=True)
-parser.add_argument('-s', '--scale', help='scale', required=True)
+parser.add_argument('--scale', help='scale', required=True, type=float)
+parser.add_argument('--extrude', help='extrude scale', default=1, type=float)
 args = parser.parse_args(additional_args)
 
 # Cleanup scene
@@ -24,7 +25,8 @@ bpy.ops.object.delete()
 # Import svg
 svg_file_path = args.input
 output_file_path = os.path.join(args.output, os.path.splitext(os.path.basename(svg_file_path))[0] + '.fbx')
-scale_float = float(args.scale)
+scale_float = args.scale
+extrude_float = args.extrude
 bpy.ops.import_curve.svg(filepath=svg_file_path)
 
 # Select CURVE objects
@@ -51,7 +53,7 @@ if selected_objects:
 
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={"value": (0, 0, width)})
+    bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width * extrude_float)})
     bpy.ops.object.mode_set(mode='OBJECT')
 
     obj = bpy.context.view_layer.objects.active
@@ -62,4 +64,4 @@ if selected_objects:
 
     bpy.ops.export_scene.fbx(filepath=output_file_path, use_selection=True, add_leaf_bones=False)
 else:
-    print("No objects of type MESH to merge.")
+    print('No objects of type MESH to merge.')

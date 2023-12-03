@@ -27,9 +27,9 @@ def aseprite(config: Config, filename: str, output: str, size: Size, script: str
         raise EnvironmentError
 
 
-def blender(config: Config, svg_files: List[str], output: str, scale: str, script: str) -> None:
+def blender(config: Config, svg_files: List[str], output: str, scale: str, extrude: str, script: str) -> None:
     for file in svg_files:
-        command = [config.blender, '-b', '-P', script, '--', '-i', file, '-o', output, '--scale', scale]
+        command = [config.blender, '-b', '-P', script, '--', '-i', file, '-o', output, '--scale', scale, '--extrude', extrude]
         ret = subprocess.run(command, capture_output=True, text=True)
         print(ret.args)
         print(ret.stdout)
@@ -52,29 +52,35 @@ def main(args: argparse.Namespace) -> None:
         print('Aseprite not found: {}'.format(config.aseprite))
         return
 
-    if not shutil.which(config.blender):
+    if args.svg_only and not shutil.which(config.blender):
         print('Blender not found: {}'.format(config.blender))
         return
 
     if args.verbose:
-        print('Blender: {}'.format(config.blender))
+        print('Svg only: {}'.format(args.svg_only))
         print('Aseprite: {}'.format(config.aseprite))
         print('Input: {}'.format(args.input))
         print('Output: {}'.format(args.output))
+        print('Size: {}'.format(args.size))
+        if not args.svg_only:
+            print('Blender: {}'.format(config.blender))
+            print('Scale: {}'.format(args.scale))
+            print('Extrude: {}'.format(args.extrude))
 
     if not os.path.isfile(args.input):
-        print("Input is not file: {}".format(args.input))
+        print('Input is not a file: {}'.format(args.input))
         return
 
     os.makedirs(args.output, exist_ok=True)
     if not os.path.isdir(args.output):
-        print("Output is not directory: {}".format(args.output))
+        print('Output is not a directory: {}'.format(args.output))
         return
 
     [tile_width, tile_height] = args.size.split('x')
     aseprite(config, args.input, args.output, Size(tile_width, tile_height), 'scripts/aseprite/convert_to_svg.lua')
-    svg_files = [os.path.join(args.output, each) for each in os.listdir(args.output) if each.endswith('.svg')]
-    blender(config, svg_files, args.output, args.scale, 'scripts/blender/convert_svg_to_fbx.py')
+    if not args.svg_only:
+        svg_files = [os.path.join(args.output, each) for each in os.listdir(args.output) if each.endswith('.svg')]
+        blender(config, svg_files, args.output, args.scale, args.extrude, 'scripts/blender/convert_svg_to_fbx.py')
 
 
 def type_size(astring: str) -> str:
@@ -95,6 +101,8 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', help='output directory', required=True)
     parser.add_argument('-s', '--size', help='size of tile. Default: 32x32', default='32x32', type=type_size)
     parser.add_argument('-v', '--verbose', action='store_true')
-    parser.add_argument('--scale', help="fbx scale. Default: 1000", default='1000', type=type_float)
+    parser.add_argument('--scale', help='fbx scale. Default: 1000', default='1000', type=type_float)
+    parser.add_argument('--extrude', help='fbx scale. Default: 1', default='1', type=type_float)
+    parser.add_argument('--svg_only', default=False, action='store_true')
     args = parser.parse_args()
     main(args)

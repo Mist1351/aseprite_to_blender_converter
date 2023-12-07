@@ -1,31 +1,36 @@
-if not app.params['file'] then
-    print('Param "file" is required')
-    return 1
+-- Print to stderr
+function eprint(...)
+    io.stderr:write(table.concat({ ... }, "\t") .. "\n")
+end
+
+-- Validate required params
+local requiredParams = { 'file', 'output' }
+for _, key in ipairs(requiredParams) do
+    if not app.params[key] then
+        eprint('Param "' .. key .. '" is required!')
+        return 1
+    end
 end
 
 local filePath = app.params['file']
 if not app.command.OpenFile { filename = filePath } then
-    print('Filed to load file:', filePath)
+    eprint('Failed to load file: ' .. filePath)
     return 1
 end
 
 local sprite = app.sprite
 if not sprite then
-    print('Sprite not found:', sprite.filename)
+    eprint('Sprite not found in file: ' .. filePath)
     return 1
 end
-
-if not app.params['output'] then
-    print('Output directory is required')
-    return 1
-end
-
-local output = app.params['output']
-local tileWidth = app.params['width']
-local tileHeight = app.params['height']
 
 local spriteWidth = sprite.width
 local spriteHeight = sprite.height
+
+local filename = app.fs.fileName(filePath)
+local output = app.params['output']
+local tileWidth = app.params['width'] or spriteWidth
+local tileHeight = app.params['height'] or spriteHeight
 
 local numTilesX = math.floor(spriteWidth / tileWidth)
 local numTilesY = math.floor(spriteHeight / tileHeight)
@@ -36,10 +41,13 @@ for y = 0, numTilesY - 1 do
         local startY = y * tileHeight
         sprite:crop(startX, startY, tileWidth, tileHeight)
 
-        local svgFileName = string.format('tile_%d_%d.svg', x, y)
+        local svgFileName = string.format('%s_tile_%d_%d.svg', filename, x, y)
         local svgFilePath = app.fs.joinPath(output, svgFileName)
 
-        sprite:saveAs(svgFilePath)
+        if false == sprite:saveAs(svgFilePath) then
+            eprint('Failed to save file: ' .. svgFilePath)
+            return 1
+        end
         print('File exported to SVG: ' .. svgFilePath)
         app.command.Undo()
     end

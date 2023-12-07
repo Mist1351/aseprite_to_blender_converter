@@ -1,0 +1,1 @@
+pyinstaller --onefile --add-data scripts/aseprite/convert_to_svg.lua;scripts/aseprite --add-data scripts/blender/convert_svg_to_fbx.py;scripts/blender .\main.py

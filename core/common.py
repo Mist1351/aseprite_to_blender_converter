@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import argparse
 import subprocess
 from argparse import Namespace, ArgumentParser
@@ -28,12 +29,23 @@ class Size:
     height: int
 
 
+def _resource_path(relative_path: str) -> str:
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    real_path = os.path.join(base_path, relative_path)
+    if not os.path.isfile(real_path):
+        real_path = relative_path
+    print(f'Script path: {real_path}')
+    return real_path
+
+
 def call_aseprite_script(script: str, **kwargs):
+    actual_script = _resource_path(script)
+    print(actual_script)
     config = load_config()
     command = [config.aseprite,
                '-b',
                *[x for key, value in kwargs.items() for x in ['--script-param', f'{key}={value}']],
-               '--script', script]
+               '--script', actual_script]
     ret = subprocess.run(command, capture_output=True, text=True)
     print(ret.args)
     print(ret.stdout)
@@ -42,10 +54,11 @@ def call_aseprite_script(script: str, **kwargs):
 
 
 def call_blender_script(script: str, **kwargs):
+    actual_script = _resource_path(script)
     config = load_config()
     command = [config.blender,
                '-b',
-               '-P', script,
+               '-P', actual_script,
                '--', *[x for key, value in kwargs.items() for x in [f'{key}', f'{value}']]]
 
     ret = subprocess.run(command, capture_output=True, text=True)

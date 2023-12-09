@@ -4,11 +4,11 @@ import sys
 import argparse
 import subprocess
 from argparse import Namespace, ArgumentParser
-from dataclasses import dataclass
 from typing import List, Tuple
 from core.config import load_config
 
 INPUT_FILE_EXTENSIONS = ['.ase', '.aseprite']
+VERSION = '0.2'
 
 
 class ScriptError(Exception):
@@ -23,13 +23,7 @@ class ArgsError(Exception):
         super().__init__(self.message)
 
 
-@dataclass
-class Size:
-    width: int
-    height: int
-
-
-def _resource_path(relative_path: str) -> str:
+def __resource_path(relative_path: str) -> str:
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     real_path = os.path.join(base_path, relative_path)
     if not os.path.isfile(real_path):
@@ -39,7 +33,7 @@ def _resource_path(relative_path: str) -> str:
 
 
 def call_aseprite_script(script: str, **kwargs):
-    actual_script = _resource_path(script)
+    actual_script = __resource_path(script)
     print(actual_script)
     config = load_config()
     command = [config.aseprite,
@@ -54,7 +48,7 @@ def call_aseprite_script(script: str, **kwargs):
 
 
 def call_blender_script(script: str, **kwargs):
-    actual_script = _resource_path(script)
+    actual_script = __resource_path(script)
     config = load_config()
     command = [config.blender,
                '-b',
@@ -72,19 +66,19 @@ def get_files(directory: str, pattern: str) -> List[str]:
     return [os.path.join(directory, each) for each in os.listdir(directory) if re.match(pattern, each)]
 
 
-def _type_size(astring: str) -> str:
+def __type_size(astring: str) -> str:
     if not re.match('^\\d+x\\d+$', astring):
         raise ValueError
     return astring
 
 
-def _type_unsigned_float(astring: str) -> str:
+def __type_unsigned_float(astring: str) -> str:
     if not re.match('^\\d+(.\\d+)?$', astring):
         raise ValueError
     return astring
 
 
-def _type_aseprite_file(astring: str) -> str:
+def __type_aseprite_file(astring: str) -> str:
     if not any(astring.endswith(ext) for ext in INPUT_FILE_EXTENSIONS):
         raise ValueError
     return astring
@@ -92,18 +86,19 @@ def _type_aseprite_file(astring: str) -> str:
 
 def parse_args() -> Tuple[Namespace, ArgumentParser]:
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
     parser.add_argument('-b', '--batch', help='run converter without gui',
                         default=False, action='store_true')
-    parser.add_argument('-i', '--input', help='aseprite file', type=_type_aseprite_file)
+    parser.add_argument('-i', '--input', help='aseprite file', type=__type_aseprite_file)
     parser.add_argument('-o', '--output', help='output directory')
     parser.add_argument('--create_output_dir', help='create output dir if not exists',
                         default=False, action='store_true')
     parser.add_argument('-s', '--size', help='size of tile',
-                        type=_type_size)
+                        type=__type_size)
     parser.add_argument('--scale', help='fbx scale',
-                        type=_type_unsigned_float)
+                        type=__type_unsigned_float)
     parser.add_argument('--extrude', help='fbx scale',
-                        type=_type_unsigned_float)
+                        type=__type_unsigned_float)
     parser.add_argument('--svg_only', help='Generate svg file only',
                         default=False, action='store_true')
     return parser.parse_args(), parser

@@ -5,10 +5,19 @@ from typing import Optional
 
 
 @dataclass
+class Size:
+    width: int
+    height: int
+
+    def __str__(self):
+        return f'{self.width}x{self.height}'
+
+
+@dataclass
 class Config:
     blender: str
     aseprite: str
-    size: Optional[str] = None
+    size: Optional[Size] = None
     scale: Optional[str] = None
     extrude: Optional[str] = None
     input: Optional[str] = None
@@ -16,16 +25,17 @@ class Config:
     svg_only: Optional[bool] = None
 
 
-_DEFAULT_CONFIG_FILENAME = 'config.ini'
+__DEFAULT_CONFIG_FILENAME = 'config.ini'
 
 
-def _validate_size_value(value: Optional[str]) -> Optional[str]:
-    if value is None or re.match('^\\d+x\\d+$', value):
-        return value
+def __validate_size_value(value: Optional[str]) -> Optional[Size]:
+    if value is not None and re.match('^\\d+x\\d+$', value):
+        width_str, height_str = value.split('x')
+        return Size(int(width_str), int(height_str))
     return None
 
 
-def _validate_unsigned_float(value: Optional[str]) -> Optional[str]:
+def __validate_unsigned_float(value: Optional[str]) -> Optional[str]:
     if value is None or re.match('^\\d+(.\\d+)?$', value):
         return value
     return None
@@ -33,14 +43,14 @@ def _validate_unsigned_float(value: Optional[str]) -> Optional[str]:
 
 def load_config(config_filename: str = None) -> Config:
     config = configparser.ConfigParser()
-    config.read(config_filename or _DEFAULT_CONFIG_FILENAME)
+    config.read(config_filename or __DEFAULT_CONFIG_FILENAME)
 
     return Config(
         blender=config.get('App', 'blender', fallback='blender.exe'),
         aseprite=config.get('App', 'aseprite', fallback='Aseprite.exe'),
-        size=_validate_size_value(config.get('User', 'size', fallback=None)),
-        scale=_validate_unsigned_float(config.get('User', 'scale', fallback=None)),
-        extrude=_validate_unsigned_float(config.get('User', 'extrude', fallback=None)),
+        size=__validate_size_value(config.get('User', 'size', fallback=None)),
+        scale=__validate_unsigned_float(config.get('User', 'scale', fallback=None)),
+        extrude=__validate_unsigned_float(config.get('User', 'extrude', fallback=None)),
         input=config.get('User', 'input', fallback=None),
         output=config.get('User', 'output', fallback=None),
         svg_only=config.getboolean('User', 'svg_only', fallback=False)
@@ -49,7 +59,7 @@ def load_config(config_filename: str = None) -> Config:
 
 def save_config(new_config: Config, config_filename: str = None):
     config = configparser.ConfigParser()
-    config.read(config_filename or _DEFAULT_CONFIG_FILENAME)
+    config.read(config_filename or __DEFAULT_CONFIG_FILENAME)
     new_config_dict = asdict(new_config)
 
     if 'App' not in config:
@@ -62,10 +72,15 @@ def save_config(new_config: Config, config_filename: str = None):
         config['User'] = {}
 
     for item in ['size', 'scale', 'extrude', 'input', 'output', 'svg_only']:
-        if new_config_dict[item] is None:
+        if item == 'size':
+            value = new_config.size
+        else:
+            value = new_config_dict[item]
+
+        if value is None:
             config.remove_option('User', item)
         else:
-            config.set('User', item, str(new_config_dict[item]))
+            config.set('User', item, str(value))
 
-    with open(config_filename or _DEFAULT_CONFIG_FILENAME, 'w') as configfile:
+    with open(config_filename or __DEFAULT_CONFIG_FILENAME, 'w') as configfile:
         config.write(configfile)

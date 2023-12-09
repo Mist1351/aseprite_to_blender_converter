@@ -3,7 +3,7 @@ import tempfile
 import os
 from dataclasses import asdict
 
-from core.config import load_config, save_config, Config
+from core.config import load_config, save_config, Config, Size
 
 
 class TestConfig(unittest.TestCase):
@@ -49,7 +49,11 @@ class TestConfig(unittest.TestCase):
                 loaded_config_dict = asdict(load_config(self.temp_config_file))
                 self.assertEqual(loaded_config_dict['aseprite'], '1')
                 self.assertEqual(loaded_config_dict['blender'], '2')
-                self.assertEqual(loaded_config_dict[key], value)
+                if key == 'size' and value is not None:
+                    width, height = [int(x) for x in value.split('x')]
+                    self.assertEqual(loaded_config_dict[key], asdict(Size(width, height)))
+                else:
+                    self.assertEqual(loaded_config_dict[key], value)
 
     def test_save_invalid_optional_values_to_config(self):
         pairs = {'size': ['', '16x', 'x16', '-16x16', '16x-16', '-16x-16', '16.0x16', '16x16.0'],

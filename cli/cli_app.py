@@ -1,6 +1,5 @@
 import argparse
 import os
-
 from core.common import call_aseprite_script, call_blender_script, get_files
 
 

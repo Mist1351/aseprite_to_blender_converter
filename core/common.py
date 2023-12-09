@@ -8,7 +8,7 @@ from typing import List, Tuple
 from core.config import load_config, PIVOT_VALUES
 
 INPUT_FILE_EXTENSIONS = ['.ase', '.aseprite']
-VERSION = '0.2.1'
+VERSION = '0.2.1a'
 
 
 class ScriptError(Exception):

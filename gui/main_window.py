@@ -188,29 +188,19 @@ class MainWindow(QMainWindow):
         elif config.output is not None:
             self.__output_dir_widget.line_edit.setText(config.output)
 
+        tile_width = None
+        tile_height = None
         if args.size is not None:
-            self.__tile_size_check_box.setChecked(True)
             [tile_width, tile_height] = args.size.split('x')
-            self.__tile_width_line_edit.setText(tile_width)
-            self.__tile_height_line_edit.setText(tile_height)
         elif config.size is not None:
-            self.__tile_size_check_box.setChecked(True)
-            self.__tile_width_line_edit.setText(str(config.size.width))
-            self.__tile_height_line_edit.setText(str(config.size.height))
-        else:
-            self.__tile_size_check_box.setChecked(False)
-            self.__tile_width_line_edit.setText('32')
-            self.__tile_height_line_edit.setText('32')
+            tile_width = str(config.size.width)
+            tile_height = str(config.size.height)
+        self.__tile_size_check_box.setChecked(tile_width is not None)
+        self.__tile_width_line_edit.setText(tile_width or '32')
+        self.__tile_height_line_edit.setText(tile_height or '32')
 
-        if args.scale is not None:
-            self.__scale_line_edit.setText(args.scale)
-        else:
-            self.__scale_line_edit.setText(config.scale or '1')
-
-        if args.extrude is not None:
-            self.__extrude_line_edit.setText(args.extrude)
-        else:
-            self.__extrude_line_edit.setText(config.extrude or '1')
+        self.__scale_line_edit.setText(args.scale or config.scale or '1')
+        self.__extrude_line_edit.setText(args.extrude or config.extrude or '1')
 
         pivot = args.pivot or config.pivot
         if pivot is not None:

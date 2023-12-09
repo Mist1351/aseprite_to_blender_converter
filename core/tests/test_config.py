@@ -2,7 +2,6 @@ import unittest
 import tempfile
 import os
 from dataclasses import asdict
-
 from core.config import load_config, save_config, Config, Size
 
 
@@ -40,7 +39,8 @@ class TestConfig(unittest.TestCase):
                  'extrude': [None, '1', '01.000', '1.5', None],
                  'input': [None, '', 'file.ext', None],
                  'output': [None, '', 'dir/', None],
-                 'svg_only': [True, False]}
+                 'svg_only': [True, False],
+                 'pivot': [None, 'center', 'bottom', None]}
         for key, values in pairs.items():
             for value in values:
                 config = Config(aseprite='1', blender='2')
@@ -59,7 +59,8 @@ class TestConfig(unittest.TestCase):
         pairs = {'size': ['', '16x', 'x16', '-16x16', '16x-16', '-16x-16', '16.0x16', '16x16.0'],
                  'scale': ['', '-1', '-1.0'],
                  'extrude': ['', '-1', '-1.0'],
-                 'svg_only': [None]}
+                 'svg_only': [None],
+                 'pivot': ['abc']}
         for key, values in pairs.items():
             for value in values:
                 config = Config(aseprite='1', blender='2')

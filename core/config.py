@@ -3,6 +3,8 @@ import re
 from dataclasses import dataclass, asdict
 from typing import Optional
 
+PIVOT_VALUES = ['center', 'bottom']
+
 
 @dataclass
 class Size:
@@ -23,6 +25,7 @@ class Config:
     input: Optional[str] = None
     output: Optional[str] = None
     svg_only: Optional[bool] = None
+    pivot: Optional[str] = None
 
 
 __DEFAULT_CONFIG_FILENAME = 'config.ini'
@@ -41,6 +44,12 @@ def __validate_unsigned_float(value: Optional[str]) -> Optional[str]:
     return None
 
 
+def __validate_pivot(value: Optional[str]) -> Optional[str]:
+    if value in PIVOT_VALUES:
+        return value
+    return None
+
+
 def load_config(config_filename: str = None) -> Config:
     config = configparser.ConfigParser()
     config.read(config_filename or __DEFAULT_CONFIG_FILENAME)
@@ -53,7 +62,8 @@ def load_config(config_filename: str = None) -> Config:
         extrude=__validate_unsigned_float(config.get('User', 'extrude', fallback=None)),
         input=config.get('User', 'input', fallback=None),
         output=config.get('User', 'output', fallback=None),
-        svg_only=config.getboolean('User', 'svg_only', fallback=False)
+        svg_only=config.getboolean('User', 'svg_only', fallback=False),
+        pivot=__validate_pivot(config.get('User', 'pivot', fallback=None))
     )
 
 
@@ -71,7 +81,7 @@ def save_config(new_config: Config, config_filename: str = None):
     if 'User' not in config:
         config['User'] = {}
 
-    for item in ['size', 'scale', 'extrude', 'input', 'output', 'svg_only']:
+    for item in ['size', 'scale', 'extrude', 'input', 'output', 'svg_only', 'pivot']:
         if item == 'size':
             value = new_config.size
         else:

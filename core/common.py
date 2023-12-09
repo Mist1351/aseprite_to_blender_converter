@@ -5,10 +5,10 @@ import argparse
 import subprocess
 from argparse import Namespace, ArgumentParser
 from typing import List, Tuple
-from core.config import load_config
+from core.config import load_config, PIVOT_VALUES
 
 INPUT_FILE_EXTENSIONS = ['.ase', '.aseprite']
-VERSION = '0.2'
+VERSION = '0.2.1'
 
 
 class ScriptError(Exception):
@@ -101,4 +101,5 @@ def parse_args() -> Tuple[Namespace, ArgumentParser]:
                         type=__type_unsigned_float)
     parser.add_argument('--svg_only', help='Generate svg file only',
                         default=False, action='store_true')
+    parser.add_argument('--pivot', help='model pivot', choices=PIVOT_VALUES)
     return parser.parse_args(), parser

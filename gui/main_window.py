@@ -2,10 +2,10 @@ import os
 import argparse
 from typing import Optional
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QCheckBox, QWidget, \
-    QGridLayout, QLabel, QHBoxLayout, QSizePolicy, QMessageBox
+    QGridLayout, QLabel, QHBoxLayout, QSizePolicy, QMessageBox, QApplication, QComboBox
 from PyQt5.QtCore import Qt, QFileInfo
-from core.common import INPUT_FILE_EXTENSIONS, call_aseprite_script, call_blender_script, get_files
-from core.config import load_config, save_config, Size
+from core.common import INPUT_FILE_EXTENSIONS, call_aseprite_script, call_blender_script, get_files, VERSION
+from core.config import load_config, save_config, Size, PIVOT_VALUES
 from gui.file_path_widget import FilePathWidget
 from gui.line_edit_number_widget import LineEditNumberWidget
 from gui.settings_window import SettingsWindow
@@ -62,18 +62,30 @@ class MainWindow(QMainWindow):
         grid.addWidget(QLabel('Extrude factor:'), 4, 0)
         grid.addWidget(self.__extrude_line_edit, 4, 1)
 
+        self.__pivot_combobox = QComboBox()
+        for pivot in PIVOT_VALUES:
+            self.__pivot_combobox.addItem(pivot)
+        grid.addWidget(QLabel('Pivot:'), 5, 0)
+        grid.addWidget(self.__pivot_combobox, 5, 1)
+
         self.__svg_only_check_box = QCheckBox('Generate SVG only without FBX')
-        grid.addWidget(self.__svg_only_check_box, 5, 0, 1, 2)
+        grid.addWidget(self.__svg_only_check_box, 6, 0, 1, 2)
 
         self.__convert_button = QPushButton('Convert')
         self.__convert_button.clicked.connect(self.__process_convert)
-        grid.addWidget(self.__convert_button, 6, 0, 1, 2)
+        grid.addWidget(self.__convert_button, 7, 0, 1, 2)
 
         self.__settings_button = QPushButton('Settings')
         self.__settings_button.clicked.connect(self.__show_settings)
-        grid.addWidget(self.__settings_button, 7, 0, 1, 2, Qt.AlignRight | Qt.AlignBottom)
+        grid.addWidget(self.__settings_button, 8, 0, 1, 2, Qt.AlignRight | Qt.AlignBottom)
 
-        grid.setRowStretch(grid.rowCount() - 1, 1)
+        grid.setRowStretch(8, 1)
+
+        version_label = QLabel(f'Version: {VERSION}')
+        font = version_label.font()
+        font.setPointSize(8)
+        version_label.setFont(font)
+        grid.addWidget(version_label, 9, 0, 1, 2, Qt.AlignLeft)
 
         self.__fill_ui(args)
 
@@ -96,6 +108,7 @@ class MainWindow(QMainWindow):
             '-o': self.__output_dir_widget.line_edit.text(),
             '--scale': self.__scale_line_edit.text(),
             '--extrude': self.__extrude_line_edit.text(),
+            '--pivot': self.__pivot_combobox.currentText(),
         }
         filename = os.path.basename(self.__input_file_widget.line_edit.text())
         files = get_files(self.__output_dir_widget.line_edit.text(), f'{filename}_tile_\\d+_\\d+\\.svg$')
@@ -105,11 +118,15 @@ class MainWindow(QMainWindow):
 
     def __process_convert(self):
         try:
+            self.__convert_button.setEnabled(False)
+            QApplication.processEvents()
             self.__run_aseprite()
             if not self.__svg_only_check_box.isChecked():
                 self.__run_blender()
         except Exception as e:
             self.__show_alert('Exception occurred', f'{e}')
+        finally:
+            self.__convert_button.setEnabled(True)
 
     @staticmethod
     def __show_settings():
@@ -145,6 +162,7 @@ class MainWindow(QMainWindow):
         config.input = self.__input_file_widget.line_edit.text()
         config.output = self.__output_dir_widget.line_edit.text()
         config.svg_only = self.__svg_only_check_box.isChecked()
+        config.pivot = self.__pivot_combobox.currentText()
         save_config(config)
         event.accept()
 
@@ -193,6 +211,10 @@ class MainWindow(QMainWindow):
             self.__extrude_line_edit.setText(args.extrude)
         else:
             self.__extrude_line_edit.setText(config.extrude or '1')
+
+        pivot = args.pivot or config.pivot
+        if pivot is not None:
+            self.__pivot_combobox.setCurrentText(pivot)
 
         self.__svg_only_check_box.setChecked(config.svg_only)
 

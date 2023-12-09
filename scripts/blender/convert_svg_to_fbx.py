@@ -18,6 +18,7 @@ parser.add_argument('-i', '--input', help='svg file', required=True)
 parser.add_argument('-o', '--output', help='output directory', required=True)
 parser.add_argument('--scale', help='scale', default=1, type=float)
 parser.add_argument('--extrude', help='extrude factor', default=1, type=float)
+parser.add_argument('--pivot', help='model pivot', default='center', choices=['center', 'bottom'])
 args = parser.parse_args(additional_args)
 
 try:
@@ -31,6 +32,7 @@ try:
     output_file_path = os.path.join(args.output, os.path.splitext(os.path.basename(svg_file_path))[0] + '.fbx')
     scale_float = args.scale
     extrude_float = args.extrude
+    pivot = args.pivot
     bpy.ops.import_curve.svg(filepath=svg_file_path)
 
     # Select CURVE objects
@@ -46,11 +48,22 @@ try:
     # Select converted objects
     bpy.ops.object.select_all(action='DESELECT')
     bpy.ops.object.select_by_type(type='MESH')
-    selected_objects = bpy.context.selected_objects
 
-    if selected_objects:
+    if bpy.context.selected_objects:
+        # Bound Box
+        #  z
+        #  | y
+        #  |/__x
+        #   [2]------[6]
+        #   /|       /|
+        # [1]+-----[5]|
+        #  | |      | |
+        #  |[3]-----+[7]
+        #  |/       |/
+        # [0]------[4]
+
         bounding_box = bpy.context.selected_objects[0].bound_box
-        width = bounding_box[6][0] - bounding_box[0][0]
+        width = (bounding_box[6][0] - bounding_box[0][0])
 
         bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
         bpy.ops.object.join()
@@ -59,13 +72,22 @@ try:
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width * extrude_float)})
         bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 
         obj = bpy.context.view_layer.objects.active
         obj.scale.x *= scale_float
         obj.scale.y *= scale_float
         obj.scale.z *= scale_float
+
         obj.rotation_euler.x = math.radians(90)
+
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+        obj.location = (0, 0, 0)
+        if pivot == 'bottom':
+            bpy.context.scene.cursor.location = (0, 0, -(bounding_box[1][2] - bounding_box[0][2]) / 2)
+            bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+            obj.location = (0, 0, 0)
 
         bpy.ops.export_scene.fbx(filepath=output_file_path, use_selection=True, add_leaf_bones=False)
     else:

@@ -23,6 +23,8 @@ def run_blender(args: argparse.Namespace):
         kwargs['--scale'] = args.scale
     if args.extrude is not None:
         kwargs['--extrude'] = args.extrude
+    if args.pivot is not None:
+        kwargs['--pivot'] = args.pivot
     filename = os.path.basename(args.input)
     files = get_files(args.output, f'{filename}_tile_\\d+_\\d+\\.svg$')
     for file in files:

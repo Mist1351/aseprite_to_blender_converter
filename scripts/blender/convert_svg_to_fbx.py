@@ -1,5 +1,6 @@
 import bpy
 import bmesh
+import numpy as np
 import math
 import os
 import argparse
@@ -33,6 +34,28 @@ def combine_materials_by_color(obj):
         else:
             material = unique_materials[color_str]
         obj.data.polygons[i].material_index = find_material_index(obj, material)
+
+
+def reduce_polygons(obj):
+    bm = bmesh.from_edit_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+    bmesh.update_edit_mesh(obj.data)
+
+
+def merge_triangles(obj):
+    bm = bmesh.from_edit_mesh(obj.data)
+    for face in bm.faces:
+        print(len(face.edges))
+        if len(face.edges) == 3:
+            for edge in face.edges:
+                print(edge)
+                coords1 = np.array(edge.verts[0].co)
+                coords2 = np.array(edge.verts[1].co)
+                diff = np.setxor1d(coords1, coords2)
+                if len(diff) > 2:
+                    bmesh.ops.dissolve_edges(bm, edges=[edge])
+                    break
+    bmesh.update_edit_mesh(obj.data)
 
 
 # Get input arguments
@@ -102,13 +125,15 @@ try:
         obj = bpy.context.view_layer.objects.active
 
         bpy.ops.object.mode_set(mode='EDIT')
-        bm = bmesh.from_edit_mesh(obj.data)
-        threshold_distance = 0.0001
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=threshold_distance)
-        bmesh.update_edit_mesh(obj.data)
+        reduce_polygons(obj)
+        merge_triangles(obj)
 
         bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width * extrude_float)})
+        for _ in range(math.floor(extrude_float)):
+            bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width)})
+        fractional_part = extrude_float % 1
+        if fractional_part > 0:
+            bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width * fractional_part)})
         bpy.ops.object.mode_set(mode='OBJECT')
 
         obj.scale.x *= scale_float

@@ -1,8 +1,39 @@
 import bpy
+import bmesh
 import math
 import os
 import argparse
 import sys
+
+
+def find_material_index(obj, material):
+    for i, m in enumerate(obj.data.materials):
+        if m == material:
+            return i
+    return -1
+
+
+def combine_materials_by_color(obj):
+    color_poly = []
+    for i, poly in obj.data.polygons.items():
+        material = obj.data.materials[poly.material_index]
+        color = material.diffuse_color
+        color_poly.append(color)
+
+    obj.data.materials.clear()
+
+    unique_materials = {}
+    for i, color in enumerate(color_poly):
+        color_str = f"{color[0]:.3f}_{color[1]:.3f}_{color[2]:.3f}"
+        if color_str not in unique_materials:
+            material = bpy.data.materials.new(name=f"Color_{color_str}")
+            material.diffuse_color = color
+            unique_materials[color_str] = material
+            obj.data.materials.append(material)
+        else:
+            material = unique_materials[color_str]
+        obj.data.polygons[i].material_index = find_material_index(obj, material)
+
 
 # Get input arguments
 double_dash_index = sys.argv.index('--') if '--' in sys.argv else -1
@@ -68,26 +99,41 @@ try:
         bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
         bpy.ops.object.join()
 
+        obj = bpy.context.view_layer.objects.active
+
         bpy.ops.object.mode_set(mode='EDIT')
+        bm = bmesh.from_edit_mesh(obj.data)
+        threshold_distance = 0.0001
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=threshold_distance)
+        bmesh.update_edit_mesh(obj.data)
+
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={'value': (0, 0, width * extrude_float)})
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        obj = bpy.context.view_layer.objects.active
         obj.scale.x *= scale_float
         obj.scale.y *= scale_float
         obj.scale.z *= scale_float
 
         obj.rotation_euler.x = math.radians(90)
 
-        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+        apply_rotation = False
+        apply_scale = True
+        bpy.ops.object.transform_apply(location=False, rotation=apply_rotation, scale=apply_scale)
 
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
         obj.location = (0, 0, 0)
         if pivot == 'bottom':
-            bpy.context.scene.cursor.location = (0, 0, -(bounding_box[1][2] - bounding_box[0][2]) / 2)
+            scale = 1 if apply_scale else scale_float
+            if apply_rotation:
+                offset = bounding_box[1][2] - bounding_box[0][2]
+            else:
+                offset = bounding_box[3][1] - bounding_box[0][1]
+            bpy.context.scene.cursor.location = (0, 0, -offset * scale / 2)
             bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
             obj.location = (0, 0, 0)
+
+        combine_materials_by_color(obj)
 
         bpy.ops.export_scene.fbx(filepath=output_file_path, use_selection=True, add_leaf_bones=False)
     else:

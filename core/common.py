@@ -8,7 +8,7 @@ from typing import List, Tuple
 from core.config import load_config, PIVOT_VALUES
 
 INPUT_FILE_EXTENSIONS = ['.ase', '.aseprite']
-VERSION = '0.2.1a'
+VERSION = '0.2.1b'
 
 
 class ScriptError(Exception):
@@ -44,7 +44,8 @@ def call_aseprite_script(script: str, **kwargs):
     print(ret.args)
     print(ret.stdout)
     if ret.returncode:
-        raise ScriptError(ret.stderr)
+        error = ret.stdout.splitlines()[-1] if ret.stderr.strip() == '' else ret.stderr
+        raise ScriptError(error)
 
 
 def call_blender_script(script: str, **kwargs):

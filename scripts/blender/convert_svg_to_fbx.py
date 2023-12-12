@@ -45,10 +45,8 @@ def reduce_polygons(obj):
 def merge_triangles(obj):
     bm = bmesh.from_edit_mesh(obj.data)
     for face in bm.faces:
-        print(len(face.edges))
         if len(face.edges) == 3:
             for edge in face.edges:
-                print(edge)
                 coords1 = np.array(edge.verts[0].co)
                 coords2 = np.array(edge.verts[1].co)
                 diff = np.setxor1d(coords1, coords2)

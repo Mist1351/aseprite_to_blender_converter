@@ -8,7 +8,7 @@ from typing import List, Tuple
 from core.config import load_config, PIVOT_VALUES
 
 INPUT_FILE_EXTENSIONS = ['.ase', '.aseprite']
-VERSION = '0.2.1b'
+VERSION = '0.2.1c'
 
 
 class ScriptError(Exception):
@@ -24,8 +24,12 @@ class ArgsError(Exception):
 
 
 def __resource_path(relative_path: str) -> str:
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    real_path = os.path.join(base_path, relative_path)
+    real_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    real_path = os.path.join(real_path, 'plugin')
+    real_path = os.path.join(real_path, relative_path)
+    if not os.path.isfile(real_path):
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        real_path = os.path.join(base_path, relative_path)
     if not os.path.isfile(real_path):
         real_path = relative_path
     print(f'Script path: {real_path}')

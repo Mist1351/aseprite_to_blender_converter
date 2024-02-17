@@ -49,6 +49,15 @@ for y = 0, numTilesY - 1 do
             return 1
         end
         print('File exported to SVG: ' .. svgFilePath)
+
+        local pngFileName = string.format('%s_tile_%d_%d.png', filename, x, y)
+        local pngFilePath = app.fs.joinPath(output, pngFileName)
+
+        if false == sprite:saveAs(pngFilePath) then
+            eprint('Failed to save file: ' .. pngFilePath)
+            return 1
+        end
+        print('File exported to PNG: ' .. pngFilePath)
         app.command.Undo()
     end
 end
